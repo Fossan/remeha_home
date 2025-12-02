@@ -4,7 +4,6 @@ from __future__ import annotations
 from typing import Any
 
 from homeassistant.components.water_heater import (
-    STATE_AUTO,
     STATE_ECO,
     STATE_PERFORMANCE,
     WaterHeaterEntity,
@@ -23,13 +22,13 @@ from .coordinator import RemehaHomeUpdateCoordinator
 
 REMEHA_DHW_MODE_TO_OPERATION = {
     "ContinuousComfort": STATE_PERFORMANCE,
-    "Schedule": STATE_AUTO,
+    "Schedule": "auto",
     "Off": STATE_ECO,
 }
 
 OPERATION_TO_REMEHA_DHW_MODE = {
     STATE_PERFORMANCE: "ContinuousComfort",
-    STATE_AUTO: "Schedule",
+    "auto": "Schedule",
     STATE_ECO: "Off",
 }
 
@@ -99,7 +98,7 @@ class RemehaHomeWaterHeater(CoordinatorEntity, WaterHeaterEntity):
     @property
     def operation_list(self) -> list[str]:
         """Return the list of available operation modes."""
-        return [STATE_ECO, STATE_PERFORMANCE, STATE_AUTO]
+        return [STATE_ECO, STATE_PERFORMANCE, "auto"]
 
     @property
     def target_temperature(self) -> float | None:
