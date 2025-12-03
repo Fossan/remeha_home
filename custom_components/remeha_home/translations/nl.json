@@ -34,9 +34,9 @@
         "water_heater": {
             "remeha_home_dhw": {
                 "state": {
-                    "schedule": "Schema",
-                    "comfort": "Comfort",
-                    "anti_frost": "Vorstbeveiliging"
+                    "heat_pump": "Schema",
+                    "performance": "Comfort",
+                    "eco": "Vorstbeveiliging"
                 },
                 "state_attributes": {
                     "current_temperature": {

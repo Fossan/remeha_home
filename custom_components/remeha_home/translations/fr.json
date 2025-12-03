@@ -34,9 +34,9 @@
         "water_heater": {
             "remeha_home_dhw": {
                 "state": {
-                    "schedule": "Programme",
-                    "comfort": "Confort",
-                    "anti_frost": "Hors gel"
+                    "heat_pump": "Programme",
+                    "performance": "Confort",
+                    "eco": "Hors gel"
                 },
                 "state_attributes": {
                     "current_temperature": {

@@ -38,9 +38,9 @@
         "water_heater": {
             "remeha_home_dhw": {
                 "state": {
-                    "schedule": "Harmonogram",
-                    "comfort": "Komfort",
-                    "anti_frost": "Antyzamarzanie"
+                    "heat_pump": "Harmonogram",
+                    "performance": "Komfort",
+                    "eco": "Antyzamarzanie"
                 },
                 "state_attributes": {
                     "current_temperature": {
