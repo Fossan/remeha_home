@@ -34,6 +34,18 @@
                     }
                 }
             }
+        },
+        "water_heater": {
+            "remeha_home_dhw": {
+                "state": {
+                    "low_temperature": "Low temperature"
+                },
+                "state_attributes": {
+                    "current_temperature": {
+                        "name": "Current temperature"
+                    }
+                }
+            }
         }
     }
 }

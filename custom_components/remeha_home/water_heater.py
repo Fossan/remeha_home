@@ -4,6 +4,7 @@ from __future__ import annotations
 from typing import Any
 
 from homeassistant.components.water_heater import (
+    STATE_HIGH_DEMAND,
     WaterHeaterEntity,
     WaterHeaterEntityFeature,
 )
@@ -60,6 +61,7 @@ class RemehaHomeWaterHeater(CoordinatorEntity, WaterHeaterEntity):
         | WaterHeaterEntityFeature.OPERATION_MODE
     )
     _attr_temperature_unit = UnitOfTemperature.CELSIUS
+    _attr_translation_key = "remeha_home_dhw"
     _attr_has_entity_name = True
     _attr_name = None
     _attr_precision = PRECISION_HALVES
@@ -99,6 +101,16 @@ class RemehaHomeWaterHeater(CoordinatorEntity, WaterHeaterEntity):
         return ["eco", "comfort", "schedule"]
 
     @property
+    def state(self) -> str | None:
+        """Return a state that reflects heating activity when available."""
+        dhw_status = self._data.get("dhwStatus")
+        if dhw_status in ("ProducingHeat", "RequestingHeat"):
+            return STATE_HIGH_DEMAND
+        if dhw_status == "LowTemperature":
+            return "low_temperature"
+        return self.current_operation
+
+    @property
     def target_temperature(self) -> float | None:
         """Return the target temperature based on the active setpoint."""
         setpoint_type = self._active_setpoint_type()
@@ -107,6 +119,11 @@ class RemehaHomeWaterHeater(CoordinatorEntity, WaterHeaterEntity):
         if setpoint_type == "eco":
             return self._data.get("reducedSetpoint")
         return self._data.get("targetSetpoint")
+
+    @property
+    def current_temperature(self) -> float | None:
+        """Return the current DHW temperature."""
+        return self._data.get("dhwTemperature")
 
     @property
     def min_temp(self) -> float | None:
@@ -145,6 +162,14 @@ class RemehaHomeWaterHeater(CoordinatorEntity, WaterHeaterEntity):
                 return "eco"
             return "comfort"
         return "eco"
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any]:
+        """Return additional attributes for diagnostics."""
+        return {
+            "dhw_status": self._data.get("dhwStatus"),
+            "boost_mode_end_time": self._data.get("boostModeEndTime"),
+        }
 
     async def async_set_temperature(self, **kwargs: Any) -> None:
         """Set new target temperature for the active setpoint."""

@@ -30,6 +30,18 @@
                     }
                 }
             }
+        },
+        "water_heater": {
+            "remeha_home_dhw": {
+                "state": {
+                    "low_temperature": "Lage temperatuur"
+                },
+                "state_attributes": {
+                    "current_temperature": {
+                        "name": "Huidige temperatuur"
+                    }
+                }
+            }
         }
     }
 }
