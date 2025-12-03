@@ -25,7 +25,7 @@ You can simply log in using the credentials that you would use in the respective
     - The water temperature and status
     - Water heater control with modes (Schedule, Comfort, Eco) and target temperature
     - Setpoint numbers for Comfort and Eco temperatures
-    - A button to trigger boost (if supported by the appliance)
+    - A switch to trigger boost (if supported by the appliance)
 - Each appliance (CV-ketel) exposes the following sensors:
     - The water pressure
 

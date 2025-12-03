@@ -16,6 +16,7 @@ from homeassistant.helpers.config_entry_oauth2_flow import (
     OAuth2Session,
 )
 from homeassistant.exceptions import ConfigEntryAuthFailed
+from aiohttp.client_exceptions import ClientResponseError
 
 from .const import DOMAIN
 
@@ -198,14 +199,20 @@ class RemehaHomeAPI:
         )
         response.raise_for_status()
 
-    async def async_trigger_hot_water_boost(
-        self, appliance_id: str, duration: int = 30
+    async def async_set_hot_water_boost(
+        self,
+        hot_water_zone_id: str,
+        enable: bool,
+        duration: int | None = None,
     ):
-        """Trigger a hot water boost on the appliance for a given duration in minutes."""
+        """Enable or disable hot water boost for the zone."""
+        payload = {"boostMode": enable}
+        if duration is not None:
+            payload["boostDuration"] = duration
         response = await self._async_api_request(
             "POST",
-            f"/appliances/{appliance_id}/hotwater",
-            json={"hotWater": True, "duration": duration},
+            f"/hot-water-zones/{hot_water_zone_id}/modes/boost",
+            json=payload,
         )
         response.raise_for_status()
 

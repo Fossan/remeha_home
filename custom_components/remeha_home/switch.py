@@ -3,6 +3,8 @@
 from __future__ import annotations
 import logging
 
+import homeassistant.util.dt as dt_util
+
 
 from homeassistant.components.switch import (
     SwitchDeviceClass,
@@ -36,6 +38,16 @@ async def async_setup_entry(
 
             entities.append(
                 RemehaHomeFireplaceModeSwitch(api, coordinator, climate_zone_id)
+            )
+
+        for hot_water_zone in appliance["hotWaterZones"]:
+            if not hot_water_zone.get("capabilityBoostMode", False):
+                continue
+            hot_water_zone_id = hot_water_zone["hotWaterZoneId"]
+            entities.append(
+                RemehaHomeDhwBoostSwitch(
+                    api, coordinator, appliance["applianceId"], hot_water_zone_id
+                )
             )
 
     async_add_entities(entities)
@@ -117,4 +129,72 @@ class RemehaHomeFireplaceModeSwitch(RemehaHomeSwitch):
         """Turn the entity off."""
         _LOGGER.debug("Disable fireplace mode")
         await self.api.async_set_fireplace_mode(self.climate_zone_id, False)
+        await self.coordinator.async_request_refresh()
+
+
+class RemehaHomeDhwBoostSwitch(CoordinatorEntity, SwitchEntity):
+    """Representation of a DHW boost toggle."""
+
+    _attr_has_entity_name = True
+
+    def __init__(
+        self,
+        api: RemehaHomeAPI,
+        coordinator: RemehaHomeUpdateCoordinator,
+        appliance_id: str,
+        hot_water_zone_id: str,
+    ) -> None:
+        """Create a DHW boost switch entity."""
+        super().__init__(coordinator)
+        self.api = api
+        self.appliance_id = appliance_id
+        self.hot_water_zone_id = hot_water_zone_id
+        self.entity_description = SwitchEntityDescription(
+            key="dhw_boost",
+            name="Boost",
+            device_class=SwitchDeviceClass.SWITCH,
+        )
+        self._attr_unique_id = "_".join(
+            [DOMAIN, self.hot_water_zone_id, self.entity_description.key]
+        )
+
+    @property
+    def _data(self):
+        """Return the hot water zone data for this switch."""
+        return self.coordinator.get_by_id(self.hot_water_zone_id)
+
+    @property
+    def is_on(self) -> bool:
+        """Return whether boost is currently active."""
+        end_time = self._data.get("boostModeEndTime")
+        if not end_time:
+            return False
+        parsed = dt_util.parse_datetime(end_time)
+        if not parsed:
+            return False
+        return parsed > dt_util.utcnow()
+
+    @property
+    def icon(self):
+        """Return the icon for this switch."""
+        return "mdi:water-boiler" if self.is_on else "mdi:water-boiler-off"
+
+    @property
+    def device_info(self) -> DeviceInfo:
+        """Return device info for this device."""
+        return self.coordinator.get_device_info(self.hot_water_zone_id)
+
+    async def async_turn_on(self, **kwargs):
+        """Turn on boost."""
+        duration = self._data.get("boostDuration") or 30
+        await self.api.async_set_hot_water_boost(
+            self.hot_water_zone_id, True, duration
+        )
+        await self.coordinator.async_request_refresh()
+
+    async def async_turn_off(self, **kwargs):
+        """Turn off boost using the boost endpoint."""
+        await self.api.async_set_hot_water_boost(
+            self.hot_water_zone_id, False, 0
+        )
         await self.coordinator.async_request_refresh()
