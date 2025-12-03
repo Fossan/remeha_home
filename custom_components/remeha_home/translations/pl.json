@@ -38,7 +38,9 @@
         "water_heater": {
             "remeha_home_dhw": {
                 "state": {
-                    "low_temperature": "Niska temperatura"
+                    "schedule": "Harmonogram",
+                    "comfort": "Komfort",
+                    "anti_frost": "Antyzamarzanie"
                 },
                 "state_attributes": {
                     "current_temperature": {

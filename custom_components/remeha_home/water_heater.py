@@ -21,14 +21,14 @@ from .coordinator import RemehaHomeUpdateCoordinator
 
 REMEHA_DHW_MODE_TO_OPERATION = {
     "ContinuousComfort": "comfort",
-    "Schedule": "schedule",
-    "Off": "eco",
+    "Scheduling": "schedule",
+    "Off": "anti_frost",
 }
 
 OPERATION_TO_REMEHA_DHW_MODE = {
     "comfort": "ContinuousComfort",
-    "schedule": "Schedule",
-    "eco": "Off",
+    "schedule": "Scheduling",
+    "anti_frost": "Off",
 }
 
 
@@ -93,22 +93,12 @@ class RemehaHomeWaterHeater(CoordinatorEntity, WaterHeaterEntity):
     @property
     def current_operation(self) -> str | None:
         """Return the current operation mode."""
-        return REMEHA_DHW_MODE_TO_OPERATION.get(self._data.get("dhwZoneMode"), "eco")
+        return REMEHA_DHW_MODE_TO_OPERATION.get(self._data.get("dhwZoneMode"))
 
     @property
     def operation_list(self) -> list[str]:
         """Return the list of available operation modes."""
-        return ["eco", "comfort", "schedule"]
-
-    @property
-    def state(self) -> str | None:
-        """Return a state that reflects heating activity when available."""
-        dhw_status = self._data.get("dhwStatus")
-        if dhw_status in ("ProducingHeat", "RequestingHeat"):
-            return STATE_HIGH_DEMAND
-        if dhw_status == "LowTemperature":
-            return "low_temperature"
-        return self.current_operation
+        return ["schedule", "comfort", "anti_frost"]
 
     @property
     def target_temperature(self) -> float | None:
@@ -152,7 +142,7 @@ class RemehaHomeWaterHeater(CoordinatorEntity, WaterHeaterEntity):
         mode = self._data.get("dhwZoneMode")
         if mode == "ContinuousComfort":
             return "comfort"
-        if mode == "Schedule":
+        if mode == "Scheduling":
             target = self._data.get("targetSetpoint")
             comfort = self._data.get("comfortSetPoint")
             reduced = self._data.get("reducedSetpoint")
@@ -169,7 +159,17 @@ class RemehaHomeWaterHeater(CoordinatorEntity, WaterHeaterEntity):
         return {
             "dhw_status": self._data.get("dhwStatus"),
             "boost_mode_end_time": self._data.get("boostModeEndTime"),
+            "heating_state": self._heating_state(),
         }
+
+    def _heating_state(self) -> str | None:
+        """Return an auxiliary heating state."""
+        dhw_status = self._data.get("dhwStatus")
+        if dhw_status in ("ProducingHeat", "RequestingHeat"):
+            return STATE_HIGH_DEMAND
+        if dhw_status == "LowTemperature":
+            return "low_temperature"
+        return None
 
     async def async_set_temperature(self, **kwargs: Any) -> None:
         """Set new target temperature for the active setpoint."""

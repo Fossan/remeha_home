@@ -34,7 +34,9 @@
         "water_heater": {
             "remeha_home_dhw": {
                 "state": {
-                    "low_temperature": "Température basse"
+                    "schedule": "Programme",
+                    "comfort": "Confort",
+                    "anti_frost": "Hors gel"
                 },
                 "state_attributes": {
                     "current_temperature": {
