@@ -119,6 +119,10 @@ HOT_WATER_ZONE_SENSOR_TYPES = [
         name="Status",
         entity_registry_enabled_default=False,
     ),
+    SensorEntityDescription(
+        key="dhwCurrentActivity",
+        name="Mode",
+    ),
 ]
 
 CLIMATE_ZONE_BINARY_SENSOR_TYPES = [

@@ -178,6 +178,15 @@ class RemehaHomeUpdateCoordinator(DataUpdateCoordinator):
 
             for hot_water_zone in appliance["hotWaterZones"]:
                 hot_water_zone_id = hot_water_zone["hotWaterZoneId"]
+                # Derive current scheduled activity from the next switch activity
+                next_activity = hot_water_zone.get("nextSwitchActivity")
+                if next_activity == "Reduced":
+                    hot_water_zone["dhwCurrentActivity"] = "Comfort"
+                elif next_activity == "Comfort":
+                    hot_water_zone["dhwCurrentActivity"] = "Eco"
+                else:
+                    hot_water_zone["dhwCurrentActivity"] = None
+
                 self.items[hot_water_zone_id] = hot_water_zone
                 self.device_info[hot_water_zone_id] = DeviceInfo(
                     identifiers={(DOMAIN, hot_water_zone_id)},
