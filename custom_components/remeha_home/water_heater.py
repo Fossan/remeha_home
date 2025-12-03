@@ -26,12 +26,14 @@ REMEHA_DHW_MODE_TO_OPERATION = {
     "ContinuousComfort": STATE_PERFORMANCE,
     "Scheduling": STATE_HEAT_PUMP,
     "Off": STATE_ECO,
+    "Boost": STATE_HIGH_DEMAND,
 }
 
 OPERATION_TO_REMEHA_DHW_MODE = {
     STATE_PERFORMANCE: "ContinuousComfort",
     STATE_HEAT_PUMP: "Scheduling",
     STATE_ECO: "Off",
+    STATE_HIGH_DEMAND: "Boost",
 }
 
 
@@ -101,7 +103,7 @@ class RemehaHomeWaterHeater(CoordinatorEntity, WaterHeaterEntity):
     @property
     def operation_list(self) -> list[str]:
         """Return the list of available operation modes."""
-        return [STATE_HEAT_PUMP, STATE_PERFORMANCE, STATE_ECO]
+        return [STATE_HEAT_PUMP, STATE_PERFORMANCE, STATE_ECO, STATE_HIGH_DEMAND]
 
     @property
     def target_temperature(self) -> float | None:
@@ -143,7 +145,7 @@ class RemehaHomeWaterHeater(CoordinatorEntity, WaterHeaterEntity):
     def _active_setpoint_type(self) -> str:
         """Guess which setpoint is currently active."""
         mode = self._data.get("dhwZoneMode")
-        if mode == "ContinuousComfort":
+        if mode in ("ContinuousComfort", "Boost"):
             return "comfort"
         if mode == "Scheduling":
             target = self._data.get("targetSetpoint")
@@ -199,10 +201,13 @@ class RemehaHomeWaterHeater(CoordinatorEntity, WaterHeaterEntity):
 
         if target_mode == "ContinuousComfort":
             await self.api.async_set_dhw_mode_comfort(self.hot_water_zone_id)
-        elif target_mode == "Schedule":
+        elif target_mode == "Scheduling":
             await self.api.async_set_dhw_mode_schedule(self.hot_water_zone_id)
         elif target_mode == "Off":
             await self.api.async_set_dhw_mode_eco(self.hot_water_zone_id)
+        elif target_mode == "Boost":
+            duration = self._data.get("boostDuration") or 30
+            await self.api.async_set_hot_water_boost(self.hot_water_zone_id, True, duration)
         else:
             return
 

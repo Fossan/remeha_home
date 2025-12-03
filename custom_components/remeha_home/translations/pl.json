@@ -40,7 +40,8 @@
                 "state": {
                     "heat_pump": "Harmonogram",
                     "performance": "Komfort",
-                    "eco": "Antyzamarzanie"
+                    "eco": "Antyzamarzanie",
+                    "high_demand": "Boost"
                 },
                 "state_attributes": {
                     "current_temperature": {

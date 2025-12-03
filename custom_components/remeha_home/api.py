@@ -207,7 +207,7 @@ class RemehaHomeAPI:
     ):
         """Enable or disable hot water boost for the zone."""
         payload = {"boostMode": enable}
-        if duration is not None:
+        if enable and duration is not None:
             payload["boostDuration"] = duration
         response = await self._async_api_request(
             "POST",

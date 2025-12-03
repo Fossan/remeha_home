@@ -40,7 +40,8 @@
                 "state": {
                     "heat_pump": "Schedule",
                     "performance": "Comfort",
-                    "eco": "Frost protection"
+                    "eco": "Frost protection",
+                    "high_demand": "Boost"
                 },
                 "state_attributes": {
                     "current_temperature": {
