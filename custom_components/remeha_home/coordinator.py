@@ -178,14 +178,9 @@ class RemehaHomeUpdateCoordinator(DataUpdateCoordinator):
 
             for hot_water_zone in appliance["hotWaterZones"]:
                 hot_water_zone_id = hot_water_zone["hotWaterZoneId"]
-                # Derive current scheduled activity from the next switch activity
-                next_activity = hot_water_zone.get("nextSwitchActivity")
-                if next_activity == "Reduced":
-                    hot_water_zone["dhwCurrentActivity"] = "Comfort"
-                elif next_activity == "Comfort":
-                    hot_water_zone["dhwCurrentActivity"] = "Eco"
-                else:
-                    hot_water_zone["dhwCurrentActivity"] = None
+                hot_water_zone["dhwCurrentActivity"] = self._derive_dhw_activity(
+                    hot_water_zone
+                )
 
                 self.items[hot_water_zone_id] = hot_water_zone
                 self.device_info[hot_water_zone_id] = DeviceInfo(
@@ -205,3 +200,19 @@ class RemehaHomeUpdateCoordinator(DataUpdateCoordinator):
     def get_device_info(self, item_id: str):
         """Return device info for the item with the specified id."""
         return self.device_info.get(item_id)
+
+    def _derive_dhw_activity(self, zone: dict) -> str | None:
+        """Derive a human-friendly DHW activity label."""
+        mode = zone.get("dhwZoneMode")
+        if mode in ("ContinuousComfort", "Boost"):
+            return "Comfort"
+        if mode == "Scheduling":
+            next_activity = zone.get("nextSwitchActivity")
+            if next_activity == "Reduced":
+                return "Comfort"
+            if next_activity == "Comfort":
+                return "Eco"
+            return None
+        if mode == "Off":
+            return "Anti-Frost"
+        return None

@@ -122,25 +122,21 @@ class RemehaHomeWaterHeater(CoordinatorEntity, WaterHeaterEntity):
 
     @property
     def min_temp(self) -> float | None:
-        """Return the minimum setpoint across comfort/eco ranges."""
+        """Return the minimum setpoint for the active setpoint type."""
         ranges = self._data.get("setPointRanges") or {}
-        candidates = [
-            ranges.get("comfortSetpointMin"),
-            ranges.get("reducedSetpointMin"),
-            self._data.get("setPointMin"),
-        ]
-        return min(value for value in candidates if value is not None)
+        active = self._active_setpoint_type()
+        if active == "comfort":
+            return ranges.get("comfortSetpointMin", self._data.get("setPointMin"))
+        return ranges.get("reducedSetpointMin", self._data.get("setPointMin"))
 
     @property
     def max_temp(self) -> float | None:
-        """Return the maximum setpoint across comfort/eco ranges."""
+        """Return the maximum setpoint for the active setpoint type."""
         ranges = self._data.get("setPointRanges") or {}
-        candidates = [
-            ranges.get("comfortSetpointMax"),
-            ranges.get("reducedSetpointMax"),
-            self._data.get("setPointMax"),
-        ]
-        return max(value for value in candidates if value is not None)
+        active = self._active_setpoint_type()
+        if active == "comfort":
+            return ranges.get("comfortSetpointMax", self._data.get("setPointMax"))
+        return ranges.get("reducedSetpointMax", self._data.get("setPointMax"))
 
     def _active_setpoint_type(self) -> str:
         """Guess which setpoint is currently active."""
@@ -148,14 +144,12 @@ class RemehaHomeWaterHeater(CoordinatorEntity, WaterHeaterEntity):
         if mode in ("ContinuousComfort", "Boost"):
             return "comfort"
         if mode == "Scheduling":
-            target = self._data.get("targetSetpoint")
-            comfort = self._data.get("comfortSetPoint")
-            reduced = self._data.get("reducedSetpoint")
-            if comfort is not None and target is not None and abs(target - comfort) < 0.25:
-                return "comfort"
-            if reduced is not None and target is not None and abs(target - reduced) < 0.25:
+            next_activity = self._data.get("nextSwitchActivity")
+            if next_activity == "Comfort":
                 return "eco"
-            return "comfort"
+            if next_activity == "Reduced":
+                return "comfort"
+            return "eco"
         return "eco"
 
     @property
@@ -213,5 +207,25 @@ class RemehaHomeWaterHeater(CoordinatorEntity, WaterHeaterEntity):
 
         # Optimistic update until the coordinator polls fresh data
         self._data["dhwZoneMode"] = target_mode
+        self._set_optimistic_target_setpoint(target_mode)
         self.async_write_ha_state()
         await self.coordinator.async_request_refresh()
+
+    def _set_optimistic_target_setpoint(self, target_mode: str) -> None:
+        """Update local target setpoint to reflect the selected mode immediately."""
+        if target_mode in ("ContinuousComfort", "Boost"):
+            self._data["targetSetpoint"] = self._data.get("comfortSetPoint")
+            return
+        if target_mode == "Scheduling":
+            next_activity = self._data.get("nextSwitchActivity")
+            if next_activity == "Comfort":
+                # Currently eco, next comfort; use eco setpoint
+                self._data["targetSetpoint"] = self._data.get("reducedSetpoint")
+            elif next_activity == "Reduced":
+                # Currently comfort, next eco; use comfort setpoint
+                self._data["targetSetpoint"] = self._data.get("comfortSetPoint")
+            else:
+                self._data["targetSetpoint"] = self._data.get("reducedSetpoint")
+            return
+        if target_mode == "Off":
+            self._data["targetSetpoint"] = self._data.get("reducedSetpoint")
