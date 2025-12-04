@@ -34,6 +34,7 @@ async def async_setup_entry(
                     setpoint_type="comfort",
                     name="Comfort Temperature",
                     key="comfortSetPoint",
+                    icon="mdi:water-thermometer",
                 )
             )
             entities.append(
@@ -44,6 +45,7 @@ async def async_setup_entry(
                     setpoint_type="eco",
                     name="Eco Temperature",
                     key="reducedSetpoint",
+                    icon="mdi:water-thermometer-outline",
                 )
             )
 
@@ -66,6 +68,7 @@ class RemehaHomeDhwSetpointNumber(CoordinatorEntity, NumberEntity):
         setpoint_type: str,
         name: str,
         key: str,
+        icon: str,
     ) -> None:
         """Create a DHW setpoint number."""
         super().__init__(coordinator)
@@ -75,6 +78,7 @@ class RemehaHomeDhwSetpointNumber(CoordinatorEntity, NumberEntity):
         self._attr_name = name
         self.key = key
         self._attr_unique_id = "_".join([DOMAIN, self.hot_water_zone_id, key])
+        self._attr_icon = icon
 
     @property
     def _data(self):
