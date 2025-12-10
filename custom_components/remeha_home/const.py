@@ -123,6 +123,11 @@ HOT_WATER_ZONE_SENSOR_TYPES = [
         key="dhwCurrentActivity",
         name="Mode",
     ),
+    SensorEntityDescription(
+        key="nextSwitchTime",
+        name="Next Setpoint Time",
+        device_class=SensorDeviceClass.TIMESTAMP,
+    ),
 ]
 
 CLIMATE_ZONE_BINARY_SENSOR_TYPES = [
