@@ -13,6 +13,7 @@ from homeassistant.exceptions import ConfigEntryAuthFailed
 
 from .api import RemehaHomeAPI
 from .const import DOMAIN
+from .util import detect_dhw_setpoint_activity
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -207,12 +208,11 @@ class RemehaHomeUpdateCoordinator(DataUpdateCoordinator):
         if mode in ("ContinuousComfort", "Boost"):
             return "Comfort"
         if mode == "Scheduling":
-            next_activity = zone.get("nextSwitchActivity")
-            if next_activity == "Reduced":
-                return "Comfort"
-            if next_activity == "Comfort":
-                return "Eco"
-            return None
+            return detect_dhw_setpoint_activity(
+                zone.get("targetSetpoint"),
+                zone.get("comfortSetPoint"),
+                zone.get("reducedSetpoint"),
+            )
         if mode == "Off":
             return "Anti-Frost"
         return None

@@ -21,6 +21,7 @@ from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from .api import RemehaHomeAPI
 from .const import DOMAIN
 from .coordinator import RemehaHomeUpdateCoordinator
+from .util import detect_dhw_setpoint_activity
 
 REMEHA_DHW_MODE_TO_OPERATION = {
     "ContinuousComfort": STATE_PERFORMANCE,
@@ -144,11 +145,13 @@ class RemehaHomeWaterHeater(CoordinatorEntity, WaterHeaterEntity):
         if mode in ("ContinuousComfort", "Boost"):
             return "comfort"
         if mode == "Scheduling":
-            next_activity = self._data.get("nextSwitchActivity")
-            if next_activity == "Comfort":
-                return "eco"
-            if next_activity == "Reduced":
-                return "comfort"
+            activity = detect_dhw_setpoint_activity(
+                self._data.get("targetSetpoint"),
+                self._data.get("comfortSetPoint"),
+                self._data.get("reducedSetpoint"),
+            )
+            if activity:
+                return activity.lower()
             return "eco"
         return "eco"
 
