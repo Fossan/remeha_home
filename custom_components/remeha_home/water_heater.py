@@ -180,14 +180,20 @@ class RemehaHomeWaterHeater(CoordinatorEntity, WaterHeaterEntity):
 
         setpoint_type = self._active_setpoint_type()
         if setpoint_type == "comfort":
+            # Optimistic local update to avoid transient UI mismatches
+            self._data["comfortSetPoint"] = temperature
+            self._data["targetSetpoint"] = temperature
             await self.api.async_set_dhw_comfort_setpoint(
                 self.hot_water_zone_id, temperature
             )
         else:
+            self._data["reducedSetpoint"] = temperature
+            self._data["targetSetpoint"] = temperature
             await self.api.async_set_dhw_reduced_setpoint(
                 self.hot_water_zone_id, temperature
             )
 
+        self.async_write_ha_state()
         await self.coordinator.async_request_refresh()
 
     async def async_set_operation_mode(self, operation_mode: str) -> None:
@@ -220,14 +226,14 @@ class RemehaHomeWaterHeater(CoordinatorEntity, WaterHeaterEntity):
             self._data["targetSetpoint"] = self._data.get("comfortSetPoint")
             return
         if target_mode == "Scheduling":
-            next_activity = self._data.get("nextSwitchActivity")
-            if next_activity == "Comfort":
-                # Currently eco, next comfort; use eco setpoint
-                self._data["targetSetpoint"] = self._data.get("reducedSetpoint")
-            elif next_activity == "Reduced":
-                # Currently comfort, next eco; use comfort setpoint
+            activity = detect_dhw_setpoint_activity(
+                self._data.get("targetSetpoint"),
+                self._data.get("comfortSetPoint"),
+                self._data.get("reducedSetpoint"),
+            )
+            if activity == "Comfort":
                 self._data["targetSetpoint"] = self._data.get("comfortSetPoint")
-            else:
+            elif activity == "Eco":
                 self._data["targetSetpoint"] = self._data.get("reducedSetpoint")
             return
         if target_mode == "Off":
