@@ -109,7 +109,7 @@ class RemehaHomeWaterHeater(CoordinatorEntity, WaterHeaterEntity):
     @property
     def target_temperature(self) -> float | None:
         """Return the target temperature based on the active setpoint."""
-        setpoint_type = self._active_setpoint_type()
+        setpoint_type = self._current_setpoint_type()
         if setpoint_type == "comfort":
             return self._data.get("comfortSetPoint")
         if setpoint_type == "eco":
@@ -125,7 +125,7 @@ class RemehaHomeWaterHeater(CoordinatorEntity, WaterHeaterEntity):
     def min_temp(self) -> float | None:
         """Return the minimum setpoint for the active setpoint type."""
         ranges = self._data.get("setPointRanges") or {}
-        active = self._active_setpoint_type()
+        active = self._current_setpoint_type()
         if active == "comfort":
             return ranges.get("comfortSetpointMin", self._data.get("setPointMin"))
         return ranges.get("reducedSetpointMin", self._data.get("setPointMin"))
@@ -134,24 +134,24 @@ class RemehaHomeWaterHeater(CoordinatorEntity, WaterHeaterEntity):
     def max_temp(self) -> float | None:
         """Return the maximum setpoint for the active setpoint type."""
         ranges = self._data.get("setPointRanges") or {}
-        active = self._active_setpoint_type()
+        active = self._current_setpoint_type()
         if active == "comfort":
             return ranges.get("comfortSetpointMax", self._data.get("setPointMax"))
         return ranges.get("reducedSetpointMax", self._data.get("setPointMax"))
 
-    def _active_setpoint_type(self) -> str:
-        """Guess which setpoint is currently active."""
+    def _current_setpoint_type(self) -> str:
+        """Return the active setpoint type based on the current mode."""
         mode = self._data.get("dhwZoneMode")
         if mode in ("ContinuousComfort", "Boost"):
             return "comfort"
+        if mode == "Off":
+            return "eco"
         if mode == "Scheduling":
-            activity = detect_dhw_setpoint_activity(
-                self._data.get("targetSetpoint"),
-                self._data.get("comfortSetPoint"),
-                self._data.get("reducedSetpoint"),
-            )
-            if activity:
-                return activity.lower()
+            activity = self._data.get("dhwCurrentActivity")
+            if activity == "Comfort":
+                return "comfort"
+            if activity == "Eco":
+                return "eco"
             return "eco"
         return "eco"
 
@@ -178,7 +178,7 @@ class RemehaHomeWaterHeater(CoordinatorEntity, WaterHeaterEntity):
         if (temperature := kwargs.get(ATTR_TEMPERATURE)) is None:
             return
 
-        setpoint_type = self._active_setpoint_type()
+        setpoint_type = self._current_setpoint_type()
         if setpoint_type == "comfort":
             # Optimistic local update to avoid transient UI mismatches
             self._data["comfortSetPoint"] = temperature

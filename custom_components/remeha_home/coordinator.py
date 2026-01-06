@@ -35,6 +35,7 @@ class RemehaHomeUpdateCoordinator(DataUpdateCoordinator):
         self.technical_info = {}
         self.appliance_consumption_data = {}
         self.appliance_last_consumption_data_update = {}
+        self.dhw_activity_cache = {}
 
     async def _async_update_data(self):
         """Fetch data from API endpoint.
@@ -206,13 +207,21 @@ class RemehaHomeUpdateCoordinator(DataUpdateCoordinator):
         """Derive a human-friendly DHW activity label."""
         mode = zone.get("dhwZoneMode")
         if mode in ("ContinuousComfort", "Boost"):
-            return "Comfort"
+            activity = "Comfort"
+            self.dhw_activity_cache[zone.get("hotWaterZoneId")] = activity
+            return activity
         if mode == "Scheduling":
-            return detect_dhw_setpoint_activity(
+            activity = detect_dhw_setpoint_activity(
                 zone.get("targetSetpoint"),
                 zone.get("comfortSetPoint"),
                 zone.get("reducedSetpoint"),
             )
+            if activity is not None:
+                self.dhw_activity_cache[zone.get("hotWaterZoneId")] = activity
+                return activity
+            return self.dhw_activity_cache.get(zone.get("hotWaterZoneId"))
         if mode == "Off":
-            return "Anti-Frost"
+            activity = "Anti-Frost"
+            self.dhw_activity_cache[zone.get("hotWaterZoneId")] = activity
+            return activity
         return None
