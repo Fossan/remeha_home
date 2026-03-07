@@ -16,7 +16,6 @@ from homeassistant.helpers.config_entry_oauth2_flow import (
     OAuth2Session,
 )
 from homeassistant.exceptions import ConfigEntryAuthFailed
-from aiohttp.client_exceptions import ClientResponseError
 
 from .const import DOMAIN
 
